@@ -1,0 +1,54 @@
+contact:
+  name: Ben Waddell
+  city: Salisbury, NC
+  phone: 704.267.7555
+  email: benjamin.waddell@gmail.com
+  website: benwaddell.com
+  github: github.com/btw1217
+
+professionalExperience:
+- title: System Administrator
+  dates: Aug 2017 - Sep 2020
+  company: Hexagon Agility
+  location: Salisbury, NC
+  accomplishments:
+  - Designed, implemented, and managed IT infrastructure, including Windows and Linux servers, storage, networking, and security as the senior technical lead for 10 facilities, maintaining uptime standard of 99.9%.
+  - Automated routine tasks and internal software deployments using Python, shell scripting, and group policy, reducing department workload by 20 hours per week and improving end-user experience.
+  - Collaborated in cross-functional teams to develop new integrations and continuous improvement initiatives while communicating effectively with stakeholders to ensure projects were on schedule and within budget.
+  - Created an internal tool using Python for packaging crucial enterprise software, automating the build process and simplifying the software installation for 500+ internal end-users and external consultants.
+  - Identified an opportunity to redesign network routing and implemented improvements which increased network speed to a private cloud by 200% at no additional cost.
+- title: IT Support Analyst
+  dates: Dec 2015 - Aug 2017
+  company: Hexagon Agility
+  location: Salisbury, NC
+  accomplishments:
+  - Led initial implementation and ongoing administration of IT systems at a new flagship manufacturing facility responsible for 90% of all company production.
+  - Identified a need for user data backups and configured an automated solution to back up 500+ workstations to a cloud server, which implemented versioning and prevented the loss of over 6TB of critical data.
+  - Discovered security risks and resolved them with new security protocols, greatly reducing potential threat vectors.
+- title: IT Technician
+  dates: Oct 2014 - Dec 2015
+  company: Hexagon Agility
+  location: Santa Ana, CA
+  accomplishments:
+  - Resolved an average of 10 tickets per day through technical and non-technical problem solving, with 87% of tickets resolved within 24 hours, and maintained a 100% customer satisfaction rating.
+  - Standardized asset offerings and imaging, reducing support requirements and deployment time by 85%.
+  - Led company-wide migration of phone system from on-prem to cloud, reducing operating costs and technical involvement, while improving phone reliability and scalability.
+
+certifications:
+- name: Certified Kubernetes Administrator (CKA)
+  issuer: Cloud Native Computing Foundation
+  validDates: Feb 2022 - Present
+- name: Red Hat Certified System Administrator (RHCSA)
+  issuer: Red Hat
+  validDates: Mar 2021 - Present
+- name: AWS Certified Solutions Architect - Associate
+  isser: Amazon Web Services
+  validDates: Jul 2019 - Present
+- name: Security+
+  issuer: CompTIA
+  validDates: Oct 2017 - Present
+
+education:
+  degree: Bachelor of Science, Information Technology
+  university: Western Governors University
+  graduationDate: June 2019

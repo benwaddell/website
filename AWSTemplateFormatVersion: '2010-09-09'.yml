@@ -1,0 +1,452 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Metadata:
+  RepoUrl: https://github.com/btw1217/website
+  AWS::CloudFormation::Interface:
+    # Creating parameters to be defined by the user
+    ParameterGroups:
+    - Label:
+        default: SNS Configuration
+      Parameters:
+      - Email
+
+# Defining parameter configuration
+Parameters:
+  EthWallet:
+    Type: String
+    Description: Ethereum Wallet Address
+    Default: "0x90F06BDB6567982cF103c9317887d8Fb943D8DfB"
+    AllowedPattern: "0x[0-9a-fA-F]+"
+
+  MinDailyProfit:
+    Type: Number
+    Description: Minimum daily profit required per instance (in dollars)
+    Default: 0.25
+    MinValue: 0.00
+
+  ProfitBreakpoint:
+    Type: Number
+    Description: Daily profit intervals at which additional instances should scale out/in (in dollars)
+    Default: 0.25
+    MinValue: 0.00
+
+  InstanceScaleQty:
+    Type: Number
+    Description: Number of instances to launch or terminate per scaling activity
+    Default: 2
+    MinValue: 1
+
+  Email:
+    Type: String
+    Description: Email for Notifications
+
+  MaxInstances:
+    Type: Number
+    Description: Max Number of Instances
+    Default: 1
+    MinValue: 1
+
+  VpcId:
+    Description: The VPC where this stack will be deployed
+    Type: AWS::EC2::VPC::Id
+
+  SubnetIds:
+    Description: At least 3 subnets where the instances will be deployed
+    Type: List<AWS::EC2::Subnet::Id>
+
+# Creating region-based mappings to specify region specific configs
+# ImageId of 'Amazon Linux 2 AMI with NVIDIA TESLA GPU Driver' in each region
+# Pool for closest Ethermine.org pool server to give lowest mining latency
+Mappings:
+  RegionMap:
+    us-east-1:
+      ImageId: ami-0bd192ce8e12d77d6
+      Pool: us1.ethermine.org
+    us-east-2:
+      ImageId: ami-0f2d2cac3ec233ac5
+      Pool: us1.ethermine.org
+    us-west-1:
+      ImageId: ami-0788ef6ee5a049dc5
+      Pool: us2.ethermine.org
+    us-west-2:
+      ImageId: ami-0f93238fcf2de089f
+      Pool: us2.ethermine.org
+    ca-central-1:
+      ImageId: ami-0ec32752a9f84ac07
+      Pool: us1.ethermine.org
+    eu-central-1:
+      ImageId: ami-0be8a53810a881984
+      Pool: eu1.ethermine.org
+    eu-north-1:
+      ImageId: ami-06145ca325708227a
+      Pool: eu1.ethermine.org
+    eu-west-1:
+      ImageId: ami-0a6233545df1fdd9a
+      Pool: eu1.ethermine.org
+    eu-west-2:
+      ImageId: ami-05b346160388b374c
+      Pool: eu1.ethermine.org
+    eu-west-3:
+      ImageId: ami-051398d732c2e6bbc
+      Pool: eu1.ethermine.org
+    ap-northeast-1:
+      ImageId: ami-00c545e011e62f1d2
+      Pool: asia1.ethermine.org
+    ap-northeast-2:
+      ImageId: ami-07367f8cb33de066a
+      Pool: asia1.ethermine.org
+    ap-northeast-3:
+      ImageId: ami-08b11141b8d550861
+      Pool: asia1.ethermine.org
+    ap-south-1:
+      ImageId: ami-0a94360912c3996cf
+      Pool: asia1.ethermine.org
+    ap-southeast-1:
+      ImageId: ami-0c51ad1ebcc0e88af
+      Pool: asia1.ethermine.org
+    ap-southeast-2:
+      ImageId: ami-0903b567e7613ad26
+      Pool: asia1.ethermine.org
+    sa-east-1:
+      ImageId: ami-0b6c8421cef165ffd
+      Pool: us2.ethermine.org
+      
+Resources:
+
+  # Configuration for EC2 instances
+  InstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore'
+
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles: 
+      - !Ref InstanceRole
+
+  # Configuration for EC2 launch template
+  LaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateData:
+        IamInstanceProfile:
+          Arn: !GetAtt InstanceProfile.Arn
+        InstanceType: g4dn.xlarge
+        InstanceMarketOptions:
+          MarketType: spot
+          SpotOptions:
+            SpotInstanceType: one-time
+            MaxPrice: 0.16
+        ImageId: !FindInMap [ RegionMap, !Ref AWS::Region, ImageId ]
+        SecurityGroupIds:
+        - !Ref SecurityGroup
+        UserData:
+          'Fn::Base64':
+            'Fn::Sub':
+              - |
+                #!/bin/bash -x
+                cd /tmp
+                INSTANCE_ID=$(curl http://169.254.169.254/latest/meta-data/instance-id)
+                wget -O phoenixminer.tar.gz https://benwaddell.s3.amazonaws.com/phoenix/phoenixminer.tar.gz
+                tar xvfz phoenixminer.tar.gz
+                cd phoenix_miner
+                cat > runner.sh << __EOF__
+                #!/bin/bash -x
+                while (true); do
+                  ./PhoenixMiner \
+                    -pool ssl://${server}:5555 \
+                    -wal ${EthWallet}.${region}_${!INSTANCE_ID} \
+                    -proto 3 \
+                    -mode 1 \
+                  >> /tmp/phoenixminer.log 2>&1
+                done
+                __EOF__
+                chmod +x runner.sh
+                nohup ./runner.sh &
+
+              - {
+                region: !Ref AWS::Region,
+                server: !FindInMap [ RegionMap, !Ref AWS::Region, Pool ]
+                }
+
+  # Configuration for EC2 security group
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Ref AWS::StackName
+      GroupName: !Sub '${AWS::StackName}-sg'
+      VpcId: !Ref VpcId
+      SecurityGroupEgress:
+      - IpProtocol: -1
+        CidrIp: 0.0.0.0/0
+      Tags:
+      - Key: Name
+        Value: !Ref AWS::StackName
+
+  # Configuration for EC2 autoscaling group
+  AutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      AutoScalingGroupName: !Ref AWS::StackName
+      LaunchTemplate:
+        LaunchTemplateId: !Ref LaunchTemplate
+        Version: !GetAtt LaunchTemplate.LatestVersionNumber
+      MinSize: 0
+      MaxSize: !Ref MaxInstances
+      DesiredCapacity: 0
+      VPCZoneIdentifier: !Ref SubnetIds
+      HealthCheckGracePeriod: 300
+      HealthCheckType: EC2
+      CapacityRebalance: False
+      TerminationPolicies:
+      - Default
+      Cooldown: 1800
+      NotificationConfigurations:
+      - TopicARN: !Ref NotificationTopic
+        NotificationTypes:
+        - autoscaling:EC2_INSTANCE_LAUNCH
+        - autoscaling:EC2_INSTANCE_TERMINATE
+        - autoscaling:EC2_INSTANCE_TERMINATE_ERROR
+      Tags:
+      - Key: Name
+        Value: !Ref AWS::StackName
+        PropagateAtLaunch: true
+
+  # Configuration for SNS notification topic for EC2 alerts
+  NotificationTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Ref AWS::StackName
+
+  # Configuration for SNS subscription for EC2 alerts
+  Subscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      TopicArn: !Ref NotificationTopic
+      Protocol: email
+      Endpoint: !Ref Email
+
+  # Configuration for Lambda IAM role
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Policies:
+        - PolicyName: lambda_ec2_policy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                - logs:CreateLogGroup
+                - logs:CreateLogStream
+                - logs:PutLogEvents
+                Resource: 'arn:aws:logs:*:*:*'
+              - Effect: Allow
+                Action:
+                - autoscaling:DescribeAutoscalingGroups
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                - autoscaling:SetDesiredCapacity
+                Resource: !Sub 'arn:aws:autoscaling:${AWS::Region}:*:autoScalingGroup:*:autoScalingGroupName/${AutoScalingGroup}'
+              - Effect: Allow
+                Action:
+                - ec2:DescribeInstances
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                - ec2:TerminateInstances
+                Resource: '*'
+                Condition:
+                  StringEquals:
+                    ec2:ResourceTag/aws:ec2launchtemplate:id: !Ref LaunchTemplate
+  
+  # Configuration for Lambda function to calculate mining profitability, update autoscaling group, and purge slow workers
+  LambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-updateAsg'
+      Role: !GetAtt LambdaRole.Arn
+      Handler: index.lambda_handler
+      Runtime: python3.8
+      Timeout: 10
+      Environment:
+        Variables:
+          maxInstances: !Ref MaxInstances
+          instanceScaleQty: !Ref InstanceScaleQty
+          minDailyProfit: !Ref MinDailyProfit
+          profitBreakpoint: !Ref ProfitBreakpoint
+          targetASG: !Ref AutoScalingGroup
+          ethWallet: !Ref EthWallet
+          instanceName: !Ref AWS::StackName
+
+      Code:
+        ZipFile: |
+          from urllib.request import Request, urlopen
+          import os
+          import json
+          import boto3
+
+
+          def lambda_handler(event, context):
+
+            def purge_slow_workers():
+
+              # get environment variables
+              ethWallet = os.environ['ethWallet']
+              instanceName = os.environ['instanceName']
+
+              # get JSON for current workers
+              url = f'https://api.ethermine.org/miner/{ethWallet}/workers'
+              req = Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+              query = urlopen(req).read()
+              data = json.loads(query)['data']
+
+              # get ec2 client
+              client = boto3.client('ec2')
+
+              # get info of running ec2 instances in stack
+              stack_filter = [
+                {'Name':'tag:Name', 'Values': [instanceName]},
+                {'Name':'instance-state-name', 'Values': ['running']}
+              ]
+              runningInstances = str(client.describe_instances(Filters=stack_filter))
+              
+              # variable for reported and minimum acceptable hashrate
+              minHash = 24000000
+              
+              # variable for slow workers list
+              slowWorkers = []
+              
+              # check hashrate of all instances and add to list if below minHash
+              for worker in data:
+                  if worker['reportedHashrate'] < minHash:
+                    slowWorker = worker['worker'].split('_')[1]
+                    if slowWorker in runningInstances:
+                      slowWorkers.append(slowWorker)
+
+              if slowWorkers:               
+                # terminate slow workers
+                response = client.terminate_instances(
+                  InstanceIds = slowWorkers
+                )
+                print(f'[WORKERS] Terminated the following underperforming instance(s): {slowWorkers}.')              
+              else:
+                print('[WORKERS] No underperforming instances at the moment.')
+
+
+            def set_desired():
+              # get JSON for current ETH mining profitability
+              url = 'https://whattomine.com/coins/151-ethash.json?hr=25.0&p=1000.0&fee=0.0&cost=0.16&hcost=0.0&span_br=1h&span_d=1h&commit=Calculate'
+              req = Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+              query = urlopen(req).read()
+              data = json.loads(query)
+              profit = float(data["profit"].replace('$', ''))
+
+              # get environment variables
+              maxInstances = int(os.environ['maxInstances'])
+              instanceScaleQty = int(os.environ['instanceScaleQty'])
+              minDailyProfit = float(os.environ['minDailyProfit'])
+              profitBreakpoint = float(os.environ['profitBreakpoint'])
+              targetASG = os.environ['targetASG']
+              
+              # determine number of desired instances based on current profitability          
+              if profit < minDailyProfit:
+                desired = 0
+              else:
+                desired = int(profit / profitBreakpoint) * instanceScaleQty
+                if desired > maxInstances:
+                  desired = maxInstances
+                          
+              # get autoscaling client
+              client = boto3.client('autoscaling')
+
+              # get current configuration for the ASG
+              response = client.describe_auto_scaling_groups(AutoScalingGroupNames=[targetASG])
+              currentDesiredCapacity = response.get('AutoScalingGroups')[0]['DesiredCapacity']
+
+              # checking if changes are necessary to the current configuration
+              if desired == currentDesiredCapacity:
+                print(f'[ASG] {targetASG} ASG already at desired capacity.')
+
+              # update ASG to use new capacity (immediately if substantial changes, otherwise honor scaling cooldown)
+              elif desired < (currentDesiredCapacity / 2) or desired > (currentDesiredCapacity * 2):
+                response = client.set_desired_capacity(
+                  AutoScalingGroupName = targetASG,
+                  DesiredCapacity = desired,
+                )
+                print(f'[ASG] Updated {targetASG} ASG with new desired capacity of {desired}.')
+
+              elif profit <= 0:
+                response = client.set_desired_capacity(
+                  AutoScalingGroupName = targetASG,
+                  DesiredCapacity = 0,
+                )
+                print(f'[ASG] Updated {targetASG} ASG with new desired capacity of 0.')
+
+              else:
+                try:
+                  response = client.set_desired_capacity(
+                    AutoScalingGroupName = targetASG,
+                    DesiredCapacity = desired,
+                    HonorCooldown = True
+                  )
+                  print(f'[ASG] Updated {targetASG} ASG with new desired capacity of {desired}.')
+                except Exception:
+                  print(f'[ASG] Unable to update {targetASG} ASG with new desired capacity of {desired}. Scaling cooldown likely blocking action.')
+                  pass
+
+            purge_slow_workers()
+            set_desired()
+
+            return 'Function completed successfully'
+
+ # Configuration for EventBridge rule to trigger Lambda function
+  EventBridge:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: !Sub '${AWS::StackName}-lambda_updateAsg'
+      Description: !Sub 'Runs ${AWS::StackName}-updateAsg lambda function every 3 minutes'
+      ScheduleExpression: rate(3 minutes)
+      Targets:
+        - Arn: !GetAtt LambdaFunction.Arn
+          Id: !Sub '${AWS::StackName}-updateAsg'
+
+  # Configuration for Lambda permissions for EventBridge trigger
+  LambdaTrigger: 
+    Type: AWS::Lambda::Permission
+    Properties: 
+      FunctionName: !Ref LambdaFunction
+      Action: "lambda:InvokeFunction"
+      Principal: "events.amazonaws.com"
+      SourceArn: !GetAtt EventBridge.Arn
+
+# Configuration for SNS and Ethermine Dashboard outputs
+Outputs:
+  NotificationTopic:
+    Description: Monitoring notification topic
+    Value: !Ref NotificationTopic
+
+  DashboardUrl:
+    Description: Ethermine Dashboard URL
+    Value: !Sub "https://ethermine.org/miners/${EthWallet}/dashboard"

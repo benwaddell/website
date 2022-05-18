@@ -42,7 +42,7 @@ function submitToAPI(e) {
     // POST data to Lambda API
     $.ajax({
       type: "POST",
-      url : "https://v4n6fbf5bq5c3yd7z6hjs6jkjq0xooki.lambda-url.us-east-1.on.aws/",
+      url : "https://up22wffs5dxa6qa6cw4zb4g3sa0zzcuw.lambda-url.us-east-1.on.aws/",
       dataType: "json",
       crossDomain: "true",
       contentType: "application/json; charset=utf-8",

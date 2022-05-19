@@ -1,0 +1,346 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Website - S3 Static site with CloudFront and ACM
+Metadata:
+  RepoUrl: https://github.com/btw1217/
+  AWS::CloudFormation::Interface:
+    # Parameter groups for parameters defined during stack creation
+    ParameterGroups:
+    - Label:
+        default: Domain
+      Parameters:
+      - SubDomain
+      - DomainName
+    - Label:
+        default: S3
+      Parameters:
+      - S3BucketName
+      - NewOrExistingBucket
+    - Label:
+        default: Route53
+      Parameters:
+      - HostedZoneId
+    - Label:
+        default: Website
+      Parameters:
+      - RootPage
+      - 403ErrorPage
+      - 404ErrorPage
+    - Label:
+        default: Email
+      Parameters:
+      - ContactSenderEmail
+      - ContactRecipientEmail
+Rules:
+  # Rule to only create stack in us-east-1
+  OnlyUsEast1:
+    Assertions:
+    - Assert: !Equals
+        - !Ref AWS::Region
+        - us-east-1
+      AssertDescription: 'This template can only be deployed in the us-east-1 region.
+
+        This is because the ACM Certificate must be created in US-East-1
+
+        '
+# Parameters to be defined during stack creation
+Parameters:
+  SubDomain:
+    Description: The part of a website address before your DomainName - e.g. www
+    Type: String
+    Default: www
+    AllowedPattern: ^[^.]*$
+  DomainName:
+    Description: The part of a website address after your SubDomain - e.g. benwaddell.com
+    Type: String
+    Default: benwaddell.com
+  S3BucketName:
+    Description: Name of S3 bucket hosting the website content
+    Type: String
+    Default: benwaddell.com
+  NewOrExistingBucket:
+    Description: Is this a new or existing bucket? (If New, a new bucket will be created)
+    Type: String
+    Default: Existing
+    AllowedValues:
+    - New
+    - Existing
+  HostedZoneId:
+    Description: HostedZoneId for the domain - e.g. ZRRBFYG1TKO0P
+    Type: String
+    Default: ZRRBFYG1TKO0P
+  RootPage:
+    Description: Root page - e.g. index.html
+    Type: String
+    Default: index.html
+  403ErrorPage:
+    Description: 403 Error page - e.g. 403.html
+    Type: String
+    Default: index.html
+  404ErrorPage:
+    Description: 404 Error page - e.g. 404.html
+    Type: String
+    Default: index.html
+  ContactSenderEmail:
+    Description: Email to send Contact form messages (Must already be verified in SES)
+    Type: String
+    Default: contact@benwaddell.com
+  ContactRecipientEmail:
+    Description: Email to receive Contact form messages (Must already be verified in SES)
+    Type: String
+    Default: btw1217@gmail.com
+Conditions:
+  CreateS3Bucket: !Equals
+  - !Ref NewOrExistingBucket
+  - 'New'
+Resources:
+  # S3 bucket configuration (if not using existing bucket)
+  S3Bucket:
+    Condition: CreateS3Bucket
+    DeletionPolicy: 'Retain'
+    Metadata:
+      Comment: 'Bucket for hosting website'
+    Properties:
+      AccessControl: 'Private'
+      BucketName: !Ref S3BucketName
+    Type: 'AWS::S3::Bucket'
+  S3BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref S3BucketName
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Action:
+          - s3:GetObject
+          Effect: Allow
+          Resource: !Sub arn:aws:s3:::${S3BucketName}/*
+          Principal:
+            CanonicalUser: !GetAtt
+              - CloudFrontOriginAccessIdentity
+              - S3CanonicalUserId
+  # CloudFront configuration        
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Aliases:
+        - !Sub ${SubDomain}.${DomainName}
+        - !Ref DomainName
+        - !Ref AWS::NoValue
+        DefaultCacheBehavior:
+          Compress: true
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
+          TargetOriginId: !Sub ${SubDomain}.${DomainName}.s3.amazonaws.com
+          ViewerProtocolPolicy: redirect-to-https
+          # ResponseHeadersPolicyId: !Ref ResponseHeadersPolicy
+        CustomErrorResponses:
+        - ErrorCachingMinTTL: 60
+          ErrorCode: 404
+          ResponseCode: 404
+          ResponsePagePath: !Sub /${404ErrorPage}
+        - ErrorCachingMinTTL: 60
+          ErrorCode: 403
+          ResponseCode: 403
+          ResponsePagePath: !Sub /${403ErrorPage}
+        Enabled: true
+        HttpVersion: http2
+        DefaultRootObject: !Sub /${RootPage}
+        IPV6Enabled: true
+        Origins:
+        - DomainName: !Sub ${S3BucketName}.s3.amazonaws.com
+          Id: !Sub ${SubDomain}.${DomainName}.s3.amazonaws.com
+          S3OriginConfig:
+            OriginAccessIdentity: !Sub origin-access-identity/cloudfront/${CloudFrontOriginAccessIdentity}
+        PriceClass: PriceClass_All
+        ViewerCertificate:
+          AcmCertificateArn: !Ref AcmCertificate
+          MinimumProtocolVersion: TLSv1.2_2021
+          SslSupportMethod: sni-only
+  CloudFrontOriginAccessIdentity:
+    Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: !Sub CloudFront OAI for ${SubDomain}.${DomainName}
+  # ResponseHeadersPolicy:
+  #   Type: AWS::CloudFront::ResponseHeadersPolicy
+  #   Properties:
+  #     ResponseHeadersPolicyConfig:
+  #       Name: !Sub ${AWS::StackName}-static-site-security-headers
+  #       SecurityHeadersConfig:
+  #         StrictTransportSecurity:
+  #           AccessControlMaxAgeSec: 63072000
+  #           IncludeSubdomains: true
+  #           Override: true
+  #           Preload: true
+  #         ContentSecurityPolicy:
+  #           ContentSecurityPolicy: default-src 'none'; img-src 'self'; script-src
+  #             'self'; style-src 'self'; object-src 'none'
+  #           Override: true
+  #         ContentTypeOptions:
+  #           Override: true
+  #         FrameOptions:
+  #           FrameOption: DENY
+  #           Override: true
+  #         ReferrerPolicy:
+  #           ReferrerPolicy: same-origin
+  #           Override: true
+  #         XSSProtection:
+  #           ModeBlock: true
+  #           Override: true
+  #           Protection: true
+  # Route53 DNS record configuration
+  Route53RecordSetGroup:
+    Type: AWS::Route53::RecordSetGroup
+    Properties:
+      HostedZoneName: !Sub ${DomainName}.
+      RecordSets:
+      - Name: !Sub ${SubDomain}.${DomainName}
+        Type: A
+        AliasTarget:
+          DNSName: !GetAtt
+            - CloudFrontDistribution
+            - DomainName
+          EvaluateTargetHealth: false
+          HostedZoneId: Z2FDTNDATAQYW2
+      - Name: !Sub ${DomainName}
+        Type: A
+        AliasTarget:
+          DNSName: !GetAtt
+            - CloudFrontDistribution
+            - DomainName
+          EvaluateTargetHealth: false
+          HostedZoneId: Z2FDTNDATAQYW2
+      - Name: !Sub ${SubDomain}.${DomainName}
+        Type: AAAA
+        AliasTarget:
+          DNSName: !GetAtt
+            - CloudFrontDistribution
+            - DomainName
+          EvaluateTargetHealth: false
+          HostedZoneId: Z2FDTNDATAQYW2
+      - Name: !Sub ${DomainName}
+        Type: AAAA
+        AliasTarget:
+          DNSName: !GetAtt
+            - CloudFrontDistribution
+            - DomainName
+          EvaluateTargetHealth: false
+          HostedZoneId: Z2FDTNDATAQYW2
+  # ACM SSL certificate configuration
+  AcmCertificate:
+    Type: AWS::CertificateManager::Certificate
+    Properties:
+      DomainName: !Ref DomainName
+      SubjectAlternativeNames:
+        - !Sub '*.${DomainName}'
+        - !Ref AWS::NoValue
+      DomainValidationOptions:
+      - DomainName: !Sub ${DomainName}
+        HostedZoneId: !Ref HostedZoneId
+      ValidationMethod: DNS
+  # Lambda configuration (function for website contact form)
+  LambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-contactForm'
+      Role: !GetAtt LambdaIAMRole.Arn
+      Handler: index.sendEmail
+      Runtime: python3.9
+      Timeout: 10
+      Environment:
+        Variables:
+          sender: !Ref ContactSenderEmail
+          receiver: !Ref ContactRecipientEmail
+          domainName: !Ref DomainName
+      Code:
+        ZipFile: |
+          import boto3
+          import json
+          import os
+
+          ses = boto3.client('ses')
+
+          def sendEmail(event, context):
+              
+              contact = json.loads(event['body'])
+              name = contact.get('name')
+              email = contact.get('email')
+              subject = contact.get('subject')
+              message = contact.get('message')
+              sender = os.environ['sender']
+              receiver = os.environ['receiver']
+              domainName = os.environ['domainName']
+
+              ses.send_email(
+                  Source=sender,
+                  Destination={
+                      'ToAddresses': [
+                          receiver
+                      ],
+                  },
+                  ReplyToAddresses=["%s <%s>" % (name, email)],
+                  Message={
+                      'Body': {
+                          'Text': {
+                              'Charset': 'UTF-8',
+                              'Data': 'Name: ' + name + '\n\n' + 'Email: ' + email + '\n\n' + 'Subject: ' + subject + '\n\n' + message
+                          },
+                      },
+                      'Subject': {
+                          'Charset': 'UTF-8',
+                          'Data': name + ' sent you a message from ' + domainName
+                      },
+                  },
+              )
+  LambdaIAMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Policies:
+        - PolicyName: !Sub '${AWS::StackName}-lambda_ses_policy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                - logs:CreateLogGroup
+                - logs:DescribeLogStreams
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*'
+              - Effect: Allow
+                Action:
+                - logs:CreateLogStream
+                - logs:PutLogEvents
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${AWS::StackName}-contactForm:*'
+              - Effect: Allow
+                Action:
+                - ses:SendEmail
+                - ses:SendRawEmail
+                Resource:
+                - !Sub 'arn:aws:ses:${AWS::Region}:${AWS::AccountId}:*'
+  LambdaURL:
+    Type: AWS::Lambda::Url
+    Properties: 
+      AuthType: NONE
+      TargetFunctionArn: !Ref LambdaFunction
+      Cors:
+        AllowOrigins:
+        - '*'
+        AllowHeaders:
+        - content-type
+        AllowMethods:
+        - POST
+  LambdaURLPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref LambdaFunction
+      FunctionUrlAuthType: 'NONE'
+      Action: lambda:InvokeFunctionUrl
+      Principal: '*'

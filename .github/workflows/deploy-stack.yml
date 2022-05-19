@@ -1,5 +1,15 @@
 name: Deploy Stack to AWS CloudFormation
-uses: aws-actions/aws-cloudformation-github-deploy@v1.0.3
-with:
-  name: benwaddell-com
-  template: benwaddell-com.yaml
+
+on:
+  push:
+    paths:
+      - 'benwaddell-com.yaml'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: aws-actions/aws-cloudformation-github-deploy@v1.0.3
+      with:
+        name: benwaddell-com
+        template: benwaddell-com.yaml

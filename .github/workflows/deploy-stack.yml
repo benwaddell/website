@@ -2,8 +2,10 @@ name: Deploy Stack to AWS CloudFormation
 
 on:
   push:
-    paths:
-      - 'benwaddell-com.yaml'
+    branches:
+    - master
+    # paths:
+    #   - 'benwaddell-com.yaml'
 
 jobs:
   deploy:

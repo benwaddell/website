@@ -1,9 +1,9 @@
 name: Deploy Stack to AWS CloudFormation
 
 on:
-  workflow_dispatch:
-    # paths:
-    #   - 'benwaddell-com.yaml'
+  push:
+    paths:
+    - 'benwaddell-com.yaml'
 
 jobs:
   deploy:

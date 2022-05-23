@@ -29,7 +29,7 @@ The website files are stored in S3, with CloudFront handling content delivery, c
 
 An SSL certificate for secure HTTPS is created and stored in ACM.
 
-Route53 DNS A and AAAA records are added to forward lookups for "(www.)[]()benwaddell.com" to CloudFront, where it is then served as https://(www.)[]()benwaddell.com.
+Route53 DNS A and AAAA records are added to forward lookups for `(www.)benwaddell.com` to CloudFront, where it is then served as `https://(www.)benwaddell.com`.
 
 A Lambda function handles the API for the website's contact form and sends contact emails using SES.
 

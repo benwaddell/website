@@ -6,7 +6,9 @@ contact:
   website: benwaddell.com
   github: github.com/benwaddell
 
+
 professionalExperience:
+
 - title: System Administrator
   dates: Aug 2017 - Sep 2020
   company: Hexagon Agility
@@ -17,6 +19,7 @@ professionalExperience:
   - Collaborated in cross-functional teams to develop new integrations and continuous improvement initiatives while communicating effectively with stakeholders to ensure projects were on schedule and within budget.
   - Created an internal tool using Python for packaging crucial enterprise software, automating the build process and simplifying the software installation for 500+ internal end-users and external consultants.
   - Identified an opportunity to redesign network routing and implemented improvements which increased network speed to a private cloud by 200% at no additional cost.
+
 - title: IT Support Analyst
   dates: Dec 2015 - Aug 2017
   company: Hexagon Agility
@@ -25,6 +28,7 @@ professionalExperience:
   - Led IT systems implementation and ongoing administration of a new flagship automotive manufacturing facility responsible for 90% of all company production.
   - Identified a need for user data backups and configured an automated solution to back up 500+ workstations to the cloud, implementing versioning and preventing the loss of over 6TB of critical data.
   - Discovered security risks and quickly resolved them with new security protocols, reducing potential threat vectors.
+
 - title: IT Technician
   dates: Oct 2014 - Dec 2015
   company: Hexagon Agility
@@ -34,19 +38,25 @@ professionalExperience:
   - Standardized asset offerings and imaging, reducing support requirements and deployment time by 85%.
   - Led project of company-wide phone system migration from on-prem to cloud, reducing operating costs and technical involvement, while improving phone reliability and scalability.
 
+
 certifications:
+
 - name: Certified Kubernetes Administrator (CKA)
   issuer: Cloud Native Computing Foundation
   validDates: Feb 2022 - Present
+
 - name: Red Hat Certified System Administrator (RHCSA)
   issuer: Red Hat
   validDates: Mar 2021 - Present
+
 - name: AWS Certified Solutions Architect - Associate
   isser: Amazon Web Services
   validDates: Jul 2019 - Present
+
 - name: Security+
   issuer: CompTIA
   validDates: Oct 2017 - Present
+
 
 education:
   degree: Bachelor of Science, Information Technology

@@ -8,7 +8,6 @@ contact:
 
 
 professionalExperience:
-
 - title: System Administrator
   dates: Aug 2017 - Sep 2020
   company: Hexagon Agility
@@ -40,7 +39,6 @@ professionalExperience:
 
 
 certifications:
-
 - name: Certified Kubernetes Administrator (CKA)
   issuer: Cloud Native Computing Foundation
   validDates: Feb 2022 - Present

@@ -1,7 +1,5 @@
 # Ben Waddell's Personal Website
 
-My name is Ben Waddell and welcome to the benwaddell.com repository.
-
 ![alt text](https://benwaddell.s3.amazonaws.com/github/website/preview.png)
 
 

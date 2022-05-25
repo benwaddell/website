@@ -37,4 +37,4 @@ The entire deployment is automated and stored as a CloudFormation template. The 
 
 Finally, GitHub Actions are used for CI/CD to automate deploying changes to S3 and updating the CF stack.
 
-Using AWS I am able to host a fast, highly available website, with secure SSL, DNS, email functionality, serverless compute / API, with cached content delivery, all for nearly no cost whatsoever.
+Using AWS I am able to host a fast, highly available website, with secure SSL, DNS, email functionality, serverless compute / API, with cached content delivery, all for nearly no cost.

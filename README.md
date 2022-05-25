@@ -27,7 +27,7 @@ The website is built using HTML, CSS, and JS and hosted entirely on AWS.
 
 The website files are stored in S3, with CloudFront handling content delivery, caching, and HTTPS.
 
-An SSL/TLS certificate for secure HTTPS is created and stored in ACM.
+A SSL/TLS certificate for secure HTTPS is created and stored in ACM.
 
 Route53 DNS A and AAAA records are added to forward lookups for `(www.)benwaddell.com` to CloudFront, where it is then served as `https://(www.)benwaddell.com`.
 

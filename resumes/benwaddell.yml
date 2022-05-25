@@ -4,7 +4,7 @@ contact:
   phone: 704.267.7555
   email: benjamin.waddell@gmail.com
   website: benwaddell.com
-  github: github.com/btw1217
+  github: github.com/benwaddell
 
 professionalExperience:
 - title: System Administrator
@@ -22,9 +22,9 @@ professionalExperience:
   company: Hexagon Agility
   location: Salisbury, NC
   accomplishments:
-  - Led initial implementation and ongoing administration of IT systems at a new flagship manufacturing facility responsible for 90% of all company production.
-  - Identified a need for user data backups and configured an automated solution to back up 500+ workstations to a cloud server, which implemented versioning and prevented the loss of over 6TB of critical data.
-  - Discovered security risks and resolved them with new security protocols, greatly reducing potential threat vectors.
+  - Led IT systems implementation and ongoing administration of a new flagship automotive manufacturing facility responsible for 90% of all company production.
+  - Identified a need for user data backups and configured an automated solution to back up 500+ workstations to the cloud, implementing versioning and preventing the loss of over 6TB of critical data.
+  - Discovered security risks and quickly resolved them with new security protocols, reducing potential threat vectors.
 - title: IT Technician
   dates: Oct 2014 - Dec 2015
   company: Hexagon Agility
@@ -32,7 +32,7 @@ professionalExperience:
   accomplishments:
   - Resolved an average of 10 tickets per day through technical and non-technical problem solving, with 87% of tickets resolved within 24 hours, and maintained a 100% customer satisfaction rating.
   - Standardized asset offerings and imaging, reducing support requirements and deployment time by 85%.
-  - Led company-wide migration of phone system from on-prem to cloud, reducing operating costs and technical involvement, while improving phone reliability and scalability.
+  - Led project of company-wide phone system migration from on-prem to cloud, reducing operating costs and technical involvement, while improving phone reliability and scalability.
 
 certifications:
 - name: Certified Kubernetes Administrator (CKA)

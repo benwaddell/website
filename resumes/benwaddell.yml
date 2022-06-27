@@ -22,7 +22,6 @@ professionalExperience:
   - Automated routine tasks and internal software deployments using Python, shell scripting, and group policy, reducing department workload by 20 hours per week and improving end-user experience.
   - Collaborated in cross-functional teams to develop new integrations and continuous improvement initiatives while communicating effectively with stakeholders to ensure projects were on schedule and within budget.
   - Created an internal tool using Python for packaging crucial enterprise software, automating the build process and simplifying the software installation for 500+ internal end-users and external consultants.
-  - Identified an opportunity to redesign network routing and implemented improvements which increased network speed to a private cloud by 200% at no additional cost.
 
 - title: IT Support Analyst
   dates: Dec 2015 - Aug 2017
@@ -38,7 +37,7 @@ professionalExperience:
   company: Hexagon Agility
   location: Santa Ana, CA
   accomplishments:
-  - Resolved an average of 10 tickets per day through technical and non-technical problem solving, with 87% of tickets resolved within 24 hours, and maintained a 100% customer satisfaction rating.
+  - Resolved an average of 10 tickets per day through technical and non-technical problem solving, with 87% of tickets resolved within 24 hours.
   - Standardized asset offerings and imaging, reducing support requirements and deployment time by 85%.
   - Led project of company-wide phone system migration from on-prem to cloud, reducing operating costs and technical involvement, while improving phone reliability and scalability.
 
@@ -55,10 +54,6 @@ certifications:
 - name: AWS Certified Solutions Architect - Associate
   isser: Amazon Web Services
   validDates: Jul 2019 - Present
-
-- name: Security+
-  issuer: CompTIA
-  validDates: Oct 2017 - Present
 
 
 education:

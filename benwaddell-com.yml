@@ -144,7 +144,7 @@ Resources:
           ResponsePagePath: !Sub /${403ErrorPage}
         Enabled: true
         HttpVersion: http2
-        DefaultRootObject: !Sub /${RootPage}
+        DefaultRootObject: !Sub ${RootPage}
         IPV6Enabled: true
         Origins:
         - DomainName: !Sub ${S3BucketName}.s3.amazonaws.com

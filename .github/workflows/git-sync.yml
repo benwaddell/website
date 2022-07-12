@@ -6,7 +6,7 @@ jobs:
       - name: git-sync
         uses: wei/git-sync@v3
         with:
-          source_repo: "benwaddell/website"
+          source_repo: "benwaddell/${{ github.event.repository.name }}"
           source_branch: "refs/remotes/source/*"
-          destination_repo: "https://tameimpala:${{ secrets.GITLAB_TOKEN }}@gitlab.com/tameimpala/website.git"
+          destination_repo: "https://tameimpala:${{ secrets.GITLAB_TOKEN }}@gitlab.com/tameimpala/${{ github.event.repository.name }}.git"
           destination_branch: "refs/heads/*"

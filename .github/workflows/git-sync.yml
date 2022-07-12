@@ -1,0 +1,12 @@
+on: push
+jobs:
+  git-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: git-sync
+        uses: wei/git-sync@v3
+        with:
+          source_repo: "benwaddell/website"
+          source_branch: "refs/remotes/source/*"
+          destination_repo: "https://tameimpala:${{ secrets.GITLAB_TOKEN }}@gitlab.com/tameimpala/website.git
+          destination_branch: "refs/heads/*"
